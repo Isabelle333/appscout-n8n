@@ -1,0 +1,73 @@
+{
+  "name": "error_alerts",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2c41683e-224a-4998-8e51-98aa826bfc2c",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "1651620599",
+        "text": "=AppScout error\nWorkflow: {{ ($json.workflow?.name ?? 'unknown').replace(/([_*`\\[])/g, '\\\\$1') }}\nNode: {{ ($json.execution?.lastNodeExecuted ?? 'trigger').replace(/([_*`\\[])/g, '\\\\$1') }}\nError: {{ String($json.execution?.error?.message ?? $json.trigger?.error?.message ?? 'no message').replace(/([_*`\\[])/g, '\\\\$1') }}\nTime: {{ $now.setZone('Europe/Paris').toFormat('yyyy-MM-dd HH:mm') }}\nRun: {{ ($json.execution?.url ?? '(no link: trigger error)').replace(/([_*`\\[])/g, '\\\\$1') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c577e96f-8520-4427-99af-dd3a01953b1f",
+      "name": "Alert me",
+      "webhookId": "6420fe51-8c99-4f0a-8e10-7761641f509b",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Alert me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "a8d9ad1c-87ec-4473-956d-c69f5d6ca0e1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e6706f0e5d97aca7ead92ee4ef94cbe0505aac717af267d1dbff6c99c8bcfd"
+  },
+  "nodeGroups": [],
+  "id": "YWppHtlgq2Jhq54v",
+  "tags": []
+}
