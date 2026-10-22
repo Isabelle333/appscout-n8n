@@ -1,0 +1,1178 @@
+{
+  "name": "appscout_main",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "850c9369-590b-4e5a-aaaf-e2eb1600a7c0",
+      "name": "Telegram Trigger",
+      "webhookId": "fd1dbc6d-5c5f-4506-be9e-7661bee81ac0",
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=AppScout compares SaaS tools for small teams.\n\nSend: /compare <what you need>\nExample: /compare CRM for 10 people under 20 euros per user, needs lead scoring\n\nCategories: CRM, project management, email marketing.\nYou get a short ranking and a table file. Every tool comes with its source link. \\[verified] means a human checked it; \\[unverified] means it was found automatically.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        384
+      ],
+      "id": "80b4a137-63cd-42ca-85bb-598958061bb2",
+      "name": "Reply help",
+      "webhookId": "c875ce45-654d-495c-bb8b-5fa8e0b19364",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=I didn't understand that. Try:\n/compare project management tool for 8 people, free plan preferred\nor send /help",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        192
+      ],
+      "id": "89dd4fa8-5b3a-49ed-a746-8ff4d20cd17e",
+      "name": "Reply how to use",
+      "webhookId": "fcb88774-1553-477e-9d25-ece4ad7afd0d",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "tsouPCxIO04CAne2",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/tsouPCxIO04CAne2",
+          "cachedResultName": "admin_tools"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "command": "={{ $('Telegram Trigger').first().json.message.text.trim().split(/\\s+/)[0].slice(1).split('@')[0].toLowerCase() }}",
+            "argument": "={{ $('Telegram Trigger').first().json.message.text.trim().split(/\\s+/).slice(1).join(' ') }}",
+            "chat_id": "={{ String($('Telegram Trigger').first().json.message.chat.id) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "command",
+              "displayName": "command",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "argument",
+              "displayName": "argument",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        992,
+        -112
+      ],
+      "id": "59c7bcdc-9d01-4233-92a2-c31a051119e0",
+      "name": "Run admin_tools"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "Working on it… A category I already know usually answers within 1–2 minutes; a new search can take several minutes.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        -224
+      ],
+      "id": "1dec666c-3d3a-4d91-8365-8714af8e1464",
+      "name": "Reply searching",
+      "webhookId": "8cf59fd7-ae72-43d0-b5ab-38d23b730df3",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6aab92bc-0748-4abd-b4fe-e826db15ff5d",
+              "leftValue": "={{ $('Telegram Trigger').first().json.message.from.id }}",
+              "rightValue": 1651620599,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        -48
+      ],
+      "id": "2a293875-b4c7-4f92-a464-adb1ab0d6428",
+      "name": "Admin?"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ($json.message?.text || '').trim().toLowerCase() }}",
+                    "rightValue": "/compare",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    },
+                    "id": "3932b5a2-3fbf-4bac-b824-a9bc20b977ff"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "compare"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9cb2b6c3-7349-4b2f-be3c-df7093dc4d56",
+                    "leftValue": "={{ ($json.message?.text || '').trim().toLowerCase() }}",
+                    "rightValue": "^/(verify|pending)\\b",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "admin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a8d474a8-020a-4524-844f-9f88bc687c6a",
+                    "leftValue": "={{ ($json.message?.text || '').trim().toLowerCase() }}",
+                    "rightValue": "^/(help|start)\\b",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "other(fallback)"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ecb7368f-bb6e-4ce7-a045-314ab3fdc508",
+      "name": "Route command"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You turn a request for SaaS software into JSON. You do NOT answer the user.\nSupported categories: crm, project_management, email_marketing.\n\nRequest: {{ $('Telegram Trigger').first().json.message.text.replace(/^\\/compare(@\\w+)?\\s*/i, '') }}\n\nFill the fields:\n- category: crm, project_management or email_marketing; \"unsupported\" if it is another kind of software; \"unclear\" if the request is empty or not about software.\n- team_size: integer, or null if not given.\n- budget_per_user_eur: number per user per month, or null. \"20€\", \"20 euros\", \"$20\" -> 20. A yearly price -> divide by 12. A total team budget -> divide by team_size if known.\n- must_haves: short lowercase feature names, e.g. [\"gmail integration\", \"pipelines\"]; [] if none.\n- free_plan_required: true only if the user asks for a free plan or a free tool, otherwise false.\nKeep your reasoning short and output only the JSON.",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        688,
+        -560
+      ],
+      "id": "2588269b-c542-43c3-98f6-c97a3afa3e18",
+      "name": "Parse request",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9d116d75-1beb-4219-956d-359c832edef5",
+              "leftValue": "={{ ['crm','project_management','email_marketing'].includes(String($json.output?.category || '').trim().toLowerCase().replace(/[\\s-]+/g, '_')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        -816
+      ],
+      "id": "c5e7cdb0-c1b2-46c5-87db-576c183c2374",
+      "name": "Valid request?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ String($json.output?.category || '').trim().toLowerCase() === 'unsupported'\n  ? 'I can only compare CRM, project management and email marketing tools for now. Try: /compare email marketing tool for a 5-person shop under 15 euros'\n  : 'Tell me what you need after /compare, for example: /compare CRM for 10 people under 20 euros per user, needs lead scoring' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        -624
+      ],
+      "id": "6e60402c-138c-49f8-8234-f92b943cde9a",
+      "name": "Reply rephrase",
+      "webhookId": "c64dac1a-0f6c-4095-bc07-b4580c526fc7",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const c = $('Parse request').first().json.output;          // the criteria\nconst USD_TO_EUR = 0.89;   // approximate: check today's rate before the demo and update\nconst GBP_TO_EUR = 1.19;\n\nconst isTrue = v => v === true || String(v).toUpperCase() === 'TRUE';\nconst rows = $input.all().map(i => i.json).filter(r => r.tool_key);\nconst must = (c.must_haves || []).map(m => String(m).toLowerCase());\nconst budget = Number(c.budget_per_user_eur) > 0 ? Number(c.budget_per_user_eur) : null;\nconst freeRequired = isTrue(c.free_plan_required);           // fix: the text \"false\" is not true\n\nconst priceEur = r => {\n  const p = parseFloat(String(r.price_per_user_month).replace(',', '.'));\n  if (!Number.isFinite(p)) return null;                      // unknown price stays unknown\n  if (r.currency === 'USD') return p * USD_TO_EUR;\n  if (r.currency === 'GBP') return p * GBP_TO_EUR;\n  return p;\n};\n\nconst scored = [];\nfor (const r of rows) {\n  const p = priceEur(r);\n  const free = isTrue(r.free_plan);\n  if (budget !== null && p !== null && p > budget) continue;  // over budget: removed\n  if (freeRequired && !free) continue;                        // free plan required\n\n  const text = `${r.key_features} ${r.integrations} ${r.best_for}`.toLowerCase();\n  const matched = must.filter(m => m.split(/\\s+/).every(w => text.includes(w)));\n\n  let score = must.length ? 3 * matched.length / must.length : 0;\n  if (free) score += 1;\n  if (r.status === 'verified') score += 1;\n  if (budget !== null && p !== null) score += 1 - p / budget;\n\n  scored.push({ ...r,\n    price_eur: p === null ? '' : Math.round(p * 100) / 100,\n    matched: matched.join(', '),\n    score: Math.round(score * 100) / 100 });\n}\n\n// Highest score first. On a tie, the cheaper tool first; unknown prices last (fix: ties were in sheet order).\nconst priceKey = t => (t.price_eur === '' ? Number.MAX_VALUE : t.price_eur);\nscored.sort((a, b) => (b.score - a.score) || (priceKey(a) - priceKey(b)));\n\nconst stale = rows.some(r => r.stale);\nreturn [{ json: {\n  criteria: c,\n  top: scored.slice(0, 5),\n  all: scored,\n  considered: rows.length,\n  cache_hit: rows.length > 0 && rows.every(r => r.from_cache) && !stale,   // Fix #2\n  stale\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -1104
+      ],
+      "id": "a7f7db10-1af6-46db-aaf7-50283bdb2c44",
+      "name": "Filter + rank"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are AppScout, a Telegram bot that helps small teams choose SaaS tools. Reply in the language of the user's request.\n\nUser request: {{ $('Telegram Trigger').first().json.message.text }}\nRanked tools, best first (JSON): {{ JSON.stringify($json.top.map(t => ({name: t.name, plan: t.plan_name, price_eur_per_user_month: t.price_eur, free_plan: t.free_plan, matched: t.matched, status: t.status, best_for: t.best_for}))) }}\n\nRules:\n- Use ONLY the data above. Never invent a price, a plan or a feature.\n- Start with one sentence that names the first tool above as the best fit and says why. Do not mention \"the list\" or its order. Never name another tool as the best fit.\n- Then one line for EVERY tool in the list above, in the same order, including tools with no matches: \"1. Name (plan): X €/user/month or 'price: see source', free plan yes/no/unknown, matches: …, [verified] or [unverified]\".\n- If free_plan is empty, write \"free plan unknown\". If plan is empty, leave out the brackets.\n- If the list is empty, say that no tool fits and suggest relaxing the budget or the must-haves.\n{{ $json.stale ? '- Add the sentence: \"Some of this data may be out of date.\"' : '' }}\n- Plain text, no tables, no markdown, under 1,200 characters.\n- End with: \"Prices change: check the source links in the attached table.\"\nKeep your reasoning short.\n- If matched is empty, write \"matches: none found in our data\" instead of leaving it blank.",
+        "needsFallback": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1712,
+        -960
+      ],
+      "id": "2a0a6d6c-7708-472a-aa77-e874f1db6290",
+      "name": "Write reply",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $('Write reply').first().json.text.replace(/([_*`\\[])/g, '\\\\$1') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2048,
+        -1088
+      ],
+      "id": "11554e98-6eab-40ad-adb6-8978b323edaf",
+      "name": "Send shortlist",
+      "webhookId": "eca5a86e-26be-454a-8ae3-f492d90d0cf5",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// One row per ranked tool, best first. Read from Filter + rank, not from the Telegram reply.\nconst all = $('Filter + rank').first().json.all;\nif (all.length === 0) return [{ json: { rank: '', name: 'No tool matched your criteria' } }];\nreturn all.map((t, i) => ({ json: {\n  rank: i + 1, name: t.name, plan: t.plan_name,\n  price_per_user_month: t.price_per_user_month, currency: t.currency, price_eur: t.price_eur,\n  price_note: t.price_note, free_plan: t.free_plan, matched_must_haves: t.matched, score: t.score,\n  status: t.status, key_features: t.key_features, integrations: t.integrations,\n  best_for: t.best_for, source_url: t.source_url, last_checked: t.last_checked\n}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2256,
+        -1088
+      ],
+      "id": "e1e01284-4c0d-43e3-9e9e-a9fadb3962e4",
+      "name": "Rows for the file"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "fileName": "=appscout_{{ $('Parse request').first().json.output.category }}_{{ $now.setZone('Europe/Paris').toFormat('yyyy-MM-dd_HH.mm') }}.xlsx",
+          "headerRow": true,
+          "sheetName": "Comparison"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2464,
+        -1104
+      ],
+      "id": "d4b1765a-64bb-4a42-bfbf-658ddf37f4d2",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "Full comparison table: open the source links to check prices."
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2688,
+        -1104
+      ],
+      "id": "388b9591-b131-4f7e-904b-7195df4fc077",
+      "name": "Send table file",
+      "webhookId": "99689158-1e2e-40a0-a26c-e83ddc13e4f4",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 293087760,
+          "mode": "list",
+          "cachedResultName": "Requests",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=293087760"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "request_id": "={{ $execution.id }}",
+            "created_at": "={{ $now.setZone('Europe/Paris').toFormat('yyyy-MM-dd HH:mm') }}",
+            "chat_id": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+            "username": "={{ $('Telegram Trigger').first().json.message.from.username || '' }}",
+            "request_text": "={{ $('Telegram Trigger').first().json.message.text }}",
+            "category": "={{ $('Parse request').first().json.output.category }}",
+            "team_size": "={{ $('Parse request').first().json.output.team_size ?? '' }}",
+            "budget_per_user_eur": "={{ $('Parse request').first().json.output.budget_per_user_eur ?? '' }}",
+            "must_haves": "={{ ($('Parse request').first().json.output.must_haves || []).join(', ') }}",
+            "cache_hit": "={{ $('Filter + rank').first().json.cache_hit }}",
+            "tools_returned": "={{ $('Filter + rank').first().json.top.length }}",
+            "top_tools": "={{ $('Filter + rank').first().json.top.map(t => t.name).join(', ') }}",
+            "outcome": "={{ $('Filter + rank').first().json.stale ? 'stale' : 'ok' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "username",
+              "displayName": "username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "request_text",
+              "displayName": "request_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "team_size",
+              "displayName": "team_size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "budget_per_user_eur",
+              "displayName": "budget_per_user_eur",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "must_haves",
+              "displayName": "must_haves",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cache_hit",
+              "displayName": "cache_hit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tools_returned",
+              "displayName": "tools_returned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "top_tools",
+              "displayName": "top_tools",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "outcome",
+              "displayName": "outcome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2896,
+        -1072
+      ],
+      "id": "900fd32e-98e9-453b-b191-7ecda7f92393",
+      "name": "Log request",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "Sorry, I couldn't fetch tools right now. Please try again in a few minutes.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2704,
+        96
+      ],
+      "id": "1b4c41b2-310d-45ae-bc0f-8aa19101b520",
+      "name": "Reply try later",
+      "webhookId": "449d33a6-49b5-4a53-aa63-5994f5fffeb2",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "7vApoSVKA7rPPEIF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7vApoSVKA7rPPEIF",
+          "cachedResultName": "get_tools_for_category"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "force_refresh": "={{ false }}",
+            "category": "={{ String($json.output.category || '').trim().toLowerCase().replace(/[\\s-]+/g, '_') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "force_refresh",
+              "displayName": "force_refresh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1264,
+        -976
+      ],
+      "id": "2ac9e4aa-268c-4c10-8f2c-fdcb64d908dd",
+      "name": "Get tools",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\":            { \"type\": \"string\" },\n    \"team_size\":           { \"type\": [\"integer\", \"number\", \"string\", \"null\"] },\n    \"budget_per_user_eur\": { \"type\": [\"number\", \"string\", \"null\"] },\n    \"must_haves\":          { \"type\": [\"array\", \"null\"], \"items\": { \"type\": \"string\" } },\n    \"free_plan_required\":  { \"type\": [\"boolean\", \"string\", \"null\"] }\n  },\n  \"required\": [\"category\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        -352
+      ],
+      "id": "b2e52cff-1430-45cc-bd94-ac95c5b31f1d",
+      "name": "Parse output parser",
+      "retryOnFail": false,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3.5-super-vl:free",
+        "options": {
+          "temperature": 0,
+          "timeout": 120000,
+          "maxRetries": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -384
+      ],
+      "id": "af97d4dc-9051-481c-b60c-69f607106412",
+      "name": "Parse model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {
+          "temperature": 0,
+          "timeout": 120000,
+          "maxRetries": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -272
+      ],
+      "id": "5b8ac8f0-187e-4a0a-9fc1-59ffdfd1b8cd",
+      "name": "Parse fallback model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3.5-super-vl:free",
+        "options": {
+          "temperature": 0.3,
+          "timeout": 120000,
+          "maxRetries": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        -672
+      ],
+      "id": "3331e9f2-2c3d-4aba-85fb-9db6246a67ed",
+      "name": "Reply model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {
+          "temperature": 0.3,
+          "timeout": 120000,
+          "maxRetries": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -784
+      ],
+      "id": "2642cb65-4eb7-4bc7-a2c2-b7b115c2bf6e",
+      "name": "Reply fallback model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "=User got \"try again later\" for: {{ $('Telegram Trigger').first().json.message.text }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        96
+      ],
+      "id": "950f78fc-7f0d-41b2-a06c-06dab3f8391d",
+      "name": "Mark run failed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Route command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply searching": {
+      "main": [
+        [
+          {
+            "node": "Parse request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin?": {
+      "main": [
+        [
+          {
+            "node": "Run admin_tools",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply how to use",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route command": {
+      "main": [
+        [
+          {
+            "node": "Reply searching",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Admin?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply how to use",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse request": {
+      "main": [
+        [
+          {
+            "node": "Valid request?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply try later",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid request?": {
+      "main": [
+        [
+          {
+            "node": "Get tools",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply rephrase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter + rank": {
+      "main": [
+        [
+          {
+            "node": "Write reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write reply": {
+      "main": [
+        [
+          {
+            "node": "Send shortlist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply try later",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send shortlist": {
+      "main": [
+        [
+          {
+            "node": "Rows for the file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows for the file": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Send table file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send table file": {
+      "main": [
+        [
+          {
+            "node": "Log request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log request": {
+      "main": [
+        []
+      ]
+    },
+    "Get tools": {
+      "main": [
+        [
+          {
+            "node": "Filter + rank",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply try later",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse output parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Parse request",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ],
+      "main": [
+        []
+      ]
+    },
+    "Parse model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Parse request",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse fallback model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Parse request",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Reply model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply fallback model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write reply",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Reply try later": {
+      "main": [
+        [
+          {
+            "node": "Mark run failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "YWppHtlgq2Jhq54v",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e567d358-1333-4a08-b981-58e05546c9bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e6706f0e5d97aca7ead92ee4ef94cbe0505aac717af267d1dbff6c99c8bcfd"
+  },
+  "nodeGroups": [],
+  "id": "rwNxnUsTEsa6s1hQ",
+  "tags": []
+}
