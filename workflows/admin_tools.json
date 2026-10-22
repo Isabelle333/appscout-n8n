@@ -1,0 +1,655 @@
+{
+  "name": "admin_tools",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "command"
+            },
+            {
+              "name": "argument"
+            },
+            {
+              "name": "chat_id"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        16
+      ],
+      "id": "39a1d60a-9f0e-416f-b6d4-3d728caa9259",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "verify",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "92c45f09-7af3-4103-a152-a1dad89d5f9e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "verify"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5f5e7ab1-51bc-4e2f-a386-4b2987a47fa1",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        16
+      ],
+      "id": "1ba6d180-e493-4754-a3b5-9451ed2b0129",
+      "name": "Verify or pending"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tools",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        -80
+      ],
+      "id": "6898cd00-5a2a-4edf-bcbe-f0c762712850",
+      "name": "Read Tools (verify)",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "da28e432-5a8f-4da9-b5e0-43a9da31695c",
+              "leftValue": "={{ $json.found }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -80
+      ],
+      "id": "eb58d0ca-13b3-40f1-bb54-851ed288e27b",
+      "name": "Found?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('When Executed by Another Workflow').first().json.chat_id }}",
+        "text": "=Verified: {{ $('Find the tool').all().map(i => i.json.name + ' (' + i.json.tool_key.split('|')[0] + ')').join(', ').replace(/([_*`\\[])/g, '\\\\$1') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        -176
+      ],
+      "id": "e5dd5d1f-2394-456a-8f74-53bccf899d75",
+      "name": "Reply verified",
+      "webhookId": "4d6c193e-2f53-44e5-8d31-a894a1c87d8d",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Find which stored row(s) the admin means by \"/verify <name>\".\nconst input = $('When Executed by Another Workflow').first().json;\nconst arg = String(input.argument || '').trim();\n\n// Same identity rule as Validate + dedupe (Fix #7): \"Pipe Drive\", \"Pipedrive CRM\" -> \"pipedrive\"\nconst clean = v => String(v ?? '').replace(/\\s+/g, ' ').trim();\nconst normName = n => clean(n).toLowerCase()\n  .replace(/[®™©]/g, '')\n  .replace(/\\.(com|io|ai|co|app)\\b/g, ' ')\n  .replace(/\\b(crm|software|app|inc|ltd|the|platform)\\b/g, ' ')\n  .replace(/[^a-z0-9]+/g, ' ')\n  .trim()\n  .replace(/ by [a-z0-9]+$/, '')\n  .trim();\nconst keyOf = n => normName(n).replace(/ /g, '');\n\nif (!arg) {\n  return [{ json: { found: false, text: 'Usage: /verify <tool name>, e.g. /verify HubSpot' } }];\n}\n\nconst q = keyOf(arg);\nconst rows = $input.all().map(i => i.json).filter(r => r.tool_key);\n\n// 1. Exact identity match (may hit the same tool in two categories: both are verified)\nlet hits = rows.filter(r => String(r.tool_key).split('|')[1] === q);\n\n// 2. Otherwise a prefix match (\"/verify zoho\" -> \"Zoho CRM\"), but only if it is unique\nif (hits.length === 0) {\n  const pref = rows.filter(r => keyOf(r.name).startsWith(q));\n  if (pref.length === 1) hits = pref;\n  else if (pref.length > 1) {\n    return [{ json: { found: false,\n      text: `\"${arg}\" matches several tools: ${pref.map(r => r.name).join(', ')}. Send the full name.` } }];\n  }\n}\n\nif (hits.length === 0) {\n  return [{ json: { found: false,\n    text: `No stored tool named \"${arg}\". Send /pending to see what can be verified.` } }];\n}\n\nconst today = new Date().toISOString().slice(0, 10);\nreturn hits.map(r => ({ json: {\n  found: true,\n  tool_key: r.tool_key,\n  name: r.name,\n  status: 'verified',\n  verified_by: 'admin via Telegram',\n  last_checked: today,\n  notes: (`verified on ${today}` + (r.notes ? ` | ${r.notes}` : '')).slice(0, 500)\n}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -80
+      ],
+      "id": "c784fe1d-35d6-4cc8-946a-a57eb8b1c238",
+      "name": "Find the tool"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tools",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tool_key": "={{ $json.tool_key }}",
+            "status": "={{ $json.status }}",
+            "verified_by": "={{ $json.verified_by }}",
+            "last_checked": "={{ $json.last_checked }}",
+            "notes": "={{ $json.notes }}"
+          },
+          "matchingColumns": [
+            "tool_key"
+          ],
+          "schema": [
+            {
+              "id": "tool_key",
+              "displayName": "tool_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "plan_name",
+              "displayName": "plan_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "price_per_user_month",
+              "displayName": "price_per_user_month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "price_note",
+              "displayName": "price_note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "free_plan",
+              "displayName": "free_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "key_features",
+              "displayName": "key_features",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "integrations",
+              "displayName": "integrations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "best_for",
+              "displayName": "best_for",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "verified_by",
+              "displayName": "verified_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked",
+              "displayName": "last_checked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        -176
+      ],
+      "id": "61ddda67-8907-433b-91c5-a75823448970",
+      "name": "Mark verified",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('When Executed by Another Workflow').first().json.chat_id }}",
+        "text": "={{ $json.text.replace(/([_*`\\[])/g, '\\\\$1') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        16
+      ],
+      "id": "7061f2bb-7736-45a8-8319-bf3ec3b9db54",
+      "name": "Reply not found",
+      "webhookId": "25b70f6b-53d5-432e-83e9-22de2337e263",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tools",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        112
+      ],
+      "id": "15ab3291-830c-4a75-8160-b2e555af6142",
+      "name": "Read Tools (pending)",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build one Telegram message listing rows that still need a human check.\nlet rows = $input.all().map(i => i.json).filter(r => r.tool_key && r.status !== 'verified');\nif (rows.length === 0) return [{ json: { text: 'Nothing to check: every stored tool is verified.' } }];\n\n// Rows whose price changed after a verification come first: they matter most.\nconst changed = r => /changed on|refresh on/.test(String(r.notes || ''));\nrows.sort((a, b) => Number(changed(b)) - Number(changed(a)));\n\nconst hasPrice = r => r.price_per_user_month !== '' && r.price_per_user_month != null;\nconst fmt = r => `• ${r.name} (${r.category}): ` +\n  (hasPrice(r) ? `${r.price_per_user_month} ${r.currency}/user/month` : 'price unknown') +\n  `\\n  ${r.source_url}` + (r.notes ? `\\n  note: ${String(r.notes).slice(0, 250)}` : '');\n\nconst head = `${rows.length} tool(s) waiting for a check:\\n\\n`;\nconst tail = '\\n\\nOpen each link and compare. If it is right, send /verify <name>. ' +\n             'If not, correct the row in the Tools sheet and set its status to verified.';\n\n// Telegram refuses messages over 4,096 characters: add entries until the next one would not fit.\nconst LIMIT = 4000;\nlet body = '', shown = 0;\nfor (const r of rows) {\n  const line = (shown ? '\\n' : '') + fmt(r);\n  if (head.length + body.length + line.length + tail.length + 60 > LIMIT) break;\n  body += line; shown++;\n}\nconst more = shown < rows.length ? `\\n…and ${rows.length - shown} more in the Tools sheet.` : '';\nreturn [{ json: { text: head + body + more + tail } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        112
+      ],
+      "id": "c27f5aba-7ca2-4c34-b798-9eb19179cc58",
+      "name": "List unverified"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('When Executed by Another Workflow').first().json.chat_id }}",
+        "text": "={{ $json.text.replace(/([_*`\\[])/g, '\\\\$1') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        112
+      ],
+      "id": "fa858a0c-aace-4ba2-b8ed-f858af08bc01",
+      "name": "Reply to check",
+      "webhookId": "20d301a4-8495-46fb-ae78-1f49265cd2e6",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "telegramApi": {
+          "id": "dhpQZzuWeuSEh9TN",
+          "name": "Telegram AppScout"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Verify or pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify or pending": {
+      "main": [
+        [
+          {
+            "node": "Read Tools (verify)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Tools (pending)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Tools (verify)": {
+      "main": [
+        [
+          {
+            "node": "Find the tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found?": {
+      "main": [
+        [
+          {
+            "node": "Mark verified",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply not found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find the tool": {
+      "main": [
+        [
+          {
+            "node": "Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark verified": {
+      "main": [
+        [
+          {
+            "node": "Reply verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Tools (pending)": {
+      "main": [
+        [
+          {
+            "node": "List unverified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List unverified": {
+      "main": [
+        [
+          {
+            "node": "Reply to check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "YWppHtlgq2Jhq54v",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "5e6c0d25-649e-4879-8a86-582af0d2dbd6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e6706f0e5d97aca7ead92ee4ef94cbe0505aac717af267d1dbff6c99c8bcfd"
+  },
+  "nodeGroups": [],
+  "id": "tsouPCxIO04CAne2",
+  "tags": []
+}
