@@ -1,0 +1,874 @@
+{
+  "name": "get_tools_for_category",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "category"
+            },
+            {
+              "name": "force_refresh",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "dba5a215-9c68-479d-a897-5df401e2f361",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tools",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "category",
+              "lookupValue": "={{ $json.category }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5d57516b-2577-4c7a-bd5a-4aec311956c1",
+      "name": "Read Tools",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decide whether the stored rows for this category are fresh enough to reuse.\nconst input = $('When Executed by Another Workflow').first().json;\nconst category = String(input.category || '').trim();\nconst force = input.force_refresh === true || input.force_refresh === 'true';\n\nconst DAY = 24 * 60 * 60 * 1000;\nconst now = Date.now();\n\n// Keep only real rows (the empty item from \"Always Output Data\" has no tool_key)\nconst rows = $input.all().map(i => i.json).filter(r => r.tool_key);\n\n// A row is fresh if its last_checked date is readable and at most 30 days old\nconst fresh = rows.filter(r => {\n  const t = Date.parse(String(r.last_checked).slice(0, 10));\n  return !Number.isNaN(t) && (now - t) <= 30 * DAY;\n});\n\nreturn [{ json: {\n  category,\n  force_refresh: force,\n  total_rows: rows.length,\n  fresh_rows: fresh.length,\n  use_cache: !force && fresh.length >= 5,\n  rows\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "db48cd39-7437-4d9f-8d20-b559438d4f29",
+      "name": "Cache check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a74892e6-ecad-43a3-9ec6-fe1bcf6762cc",
+              "leftValue": "={{ $json.use_cache }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        0
+      ],
+      "id": "b6ca25c0-aa2e-4d25-8d4b-bcf9f2778105",
+      "name": "Use cache?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const QUERIES = {\n  crm: [\n    'best CRM software for small businesses pricing per user per month',\n    'CRM tools comparison free plan pricing small team',\n    'top CRM software pricing plans starter'\n  ],\n  project_management: [\n    'best project management software for small teams pricing per user',\n    'project management tools comparison free plan pricing',\n    'top project management apps pricing plans'\n  ],\n  email_marketing: [\n    'best email marketing software for small businesses pricing',\n    'email marketing tools comparison free plan pricing',\n    'top email marketing platforms pricing plans'\n  ]\n};\nconst category = $json.category;\nconst list = QUERIES[category];\nif (!list) throw new Error(`Unknown category: ${category}`);\nreturn list.map(query => ({ json: { category, query } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        96
+      ],
+      "id": "a1f3a491-19b1-45b8-9e4e-cd6cc2130625",
+      "name": "Build queries"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.query, search_depth: 'basic', max_results: 8, include_answer: false, include_raw_content: false }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1104,
+        96
+      ],
+      "id": "596f6ce1-006b-4d68-a444-b7c00cbd9830",
+      "name": "Search Tavily",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "S1b51fAdSEyE8yDo",
+          "name": "Tavily header auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Did all 3 Tavily searches succeed with results?\n// If any failed (after its retries) or nothing came back, send all 3 queries\n// to the fallback provider instead (all-or-nothing: never mix two providers).\nconst tavily = $input.all();\nconst failed = tavily.filter(i => i.json.error || !Array.isArray(i.json.results));\nconst total = tavily.reduce((n, i) => n + (Array.isArray(i.json.results) ? i.json.results.length : 0), 0);\n\nif (failed.length === 0 && total > 0) {\n  return tavily.map(i => ({ json: { ...i.json, provider: 'tavily', use_fallback: false } }));\n}\n\nconst err = failed.length ? failed[0].json.error : null;\nconst reason = !failed.length ? 'Tavily returned 0 results'\n  : (typeof err === 'string' ? err : (err && err.message) || 'unexpected response from Tavily');\n\nreturn $('Build queries').all().map(i => ({\n  json: { ...i.json, use_fallback: true, tavily_error: reason }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        96
+      ],
+      "id": "6b191dd7-c950-43f0-9b0d-c4e9e4a9972b",
+      "name": "Tavily OK?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76d2dd39-b4c6-4a8f-8fe1-855eeef413c8",
+              "leftValue": "={{ $json.use_fallback }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        80
+      ],
+      "id": "aae89067-2e67-4794-a098-3c0268c9ff68",
+      "name": "Use fallback?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.langsearch.com/v1/web-search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: $json.query, count: 8, contents: { text: { maxCharacters: 1200 } } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1680,
+        -160
+      ],
+      "id": "ef927f59-c85f-4d93-9897-4e5c9bf06e59",
+      "name": "Search LangSearch",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iOWlcFlS43jO7yaQ",
+          "name": "LangSearch header auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Adapter: translate LangSearch's answer into Tavily's shape\n// ({ results: [{ title, url, content }] }) so Combine pages works unchanged.\nconst out = $input.all().map(i => {\n  const ok = !i.json.code || i.json.code === 200;            // LangSearch reports its own status in \"code\"\n  const value = ok ? (i.json?.data?.webPages?.value || []) : [];\n  return { json: {\n    provider: 'langsearch',\n    results: value.map(r => ({\n      title: r.name || '',\n      url: r.url || '',\n      content: r.text || r.snippet || ''\n    }))\n  }};\n});\n\nconst total = out.reduce((n, i) => n + i.json.results.length, 0);\nif (total === 0) throw new Error('LangSearch fallback returned no usable results');\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1952,
+        -160
+      ],
+      "id": "f8396f1b-5dbc-477b-a84d-dd248f6f5be8",
+      "name": "LangSearch to Tavily shape",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge search results into one text chunk per query (3 smaller AI calls).\n// v2: skips sources a human can't check against a live page (videos, archive copies, social posts).\n// v2.1: host read with a regex, because URL() is not available in the n8n Code sandbox.\nconst BLOCKED = /(^|\\.)(youtube\\.com|youtu\\.be|archive\\.org|tiktok\\.com|instagram\\.com|facebook\\.com)$/i;\nconst hostOf = u => {\n  const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i);   // text between \"https://\" and the next / ? # :\n  return m ? m[1].toLowerCase() : '';\n};\n\nconst seen = new Set();\nconst category = $('Build queries').first().json.category;\nconst provider = $input.first().json.provider || 'tavily';\nconst chunks = [];\nlet blocked = 0;\n\nfor (const item of $input.all()) {\n  const parts = [];\n  for (const r of (item.json.results || [])) {\n    if (!r.url || seen.has(r.url)) continue;          // same page found twice\n    seen.add(r.url);\n    if (BLOCKED.test(hostOf(r.url))) { blocked++; continue; }   // unverifiable source\n    parts.push(`URL: ${r.url}\\nTITLE: ${r.title || ''}\\nTEXT: ${String(r.content || '').slice(0, 1200)}`);\n  }\n  if (parts.length) chunks.push({ json: { category, provider, chunk: chunks.length + 1, blocked_so_far: blocked, pages: parts.join('\\n\\n---\\n\\n') } });\n}\n\nif (chunks.length === 0) throw new Error(`No usable search results for ${category} (provider: ${provider})`);\nreturn chunks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        256
+      ],
+      "id": "814d59c2-0a02-4312-8c95-7d50e5199101",
+      "name": "Combine pages",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You extract SaaS tools from web search results. You do NOT answer anyone.\nCategory: {{ $json.category }}  (crm = CRM software, project_management = project management software, email_marketing = email marketing software)\n\nReturn every distinct tool that clearly belongs to this category. For each tool give:\n- name: the product name only (for example \"HubSpot\", not \"HubSpot pricing\")\n- plan_name: the cheapest paid plan suitable for a small team, or null if no plan is named\n- price_per_user_month: number, monthly price per user for that plan. If only a yearly price per user is given, divide by 12. If the price is for the whole team or a fixed number of users, use null and write that price in price_note. Use null if the text does not state a price, or says \"contact sales\". If both a promotional or introductory price and a regular price are given, use the regular price and mention the promotion in price_note.\n- If both a monthly-billing and an annual-billing price are given, use the monthly-billing price and write the annual one in price_note.\n- currency: the 3-letter code of that price, read from the symbol or code written next to it: $ or US$ = USD, € = EUR, £ = GBP, ₹ or Rs = INR, CA$ = CAD, A$ = AUD. Use \"\" if no price is given.\n- price_note: the price exactly as written in the text (for example \"$15/user/month billed yearly\"), followed by conditions such as \"min 3 seats\". Use \"\" if there is no price.\n- free_plan: true, false, or null if not stated\n- key_features: at most 5, comma separated\n- integrations: main integrations, comma separated\n- best_for: who it suits, in a few words\n- source_url: the URL (from the results below) where you found the price, or where the tool is described if there is no price\n\nRules: use ONLY the text below. Never invent a number or a feature: if it is not in the text, use null or \"\". Do not include blog posts or comparison sites as tools. If the same tool appears twice, keep the entry with the most complete price information. Keep your reasoning short and output only the JSON.\n\nSearch results:\n{{ $json.pages }}",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "batching": {
+          "batchSize": 3,
+          "delayBetweenBatches": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2000,
+        128
+      ],
+      "id": "6905b19e-1f97-45ee-84da-9e98041d1f98",
+      "name": "Extract tools",
+      "retryOnFail": false,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "79ef893c-362a-481d-b75d-5a5f0001789b",
+              "name": "category",
+              "value": "={{ $('Combine pages').first().json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "ef9c62dd-2ccd-4339-b242-deefdc524928",
+              "name": "tools",
+              "value": "={{ $json.output?.tools ?? [] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2416,
+        160
+      ],
+      "id": "dfb1f5a2-f468-40c3-8263-39aa9ffb8ff5",
+      "name": "Keep only fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---------- inputs ----------\nconst items    = $input.all();                                   // one item per chunk\nconst category = items[0]?.json.category || $('Cache check').first().json.category;\nconst raw      = items.flatMap(i => i.json.tools || []);\nconst existing = $('Cache check').first().json.rows || [];       // what the sheet holds now\nconst today    = new Date().toISOString().slice(0, 10);          // YYYY-MM-DD\n\n// ---------- helpers: messy value -> clean, typed value ----------\n// Lists become \"a, b, c\"; null/undefined become \"\"; extra spaces removed.\nconst clean = v => (Array.isArray(v)\n    ? v.map(x => String(x ?? '').trim()).filter(Boolean).join(', ')\n    : String(v ?? ''))\n  .replace(/\\s+/g, ' ').trim();\n\n// \"HubSpot® CRM\", \"Hubspot\", \"Bigin by Zoho CRM\", \"Pipe Drive\", \"monday.com CRM\"\n//   -> \"hubspot\", \"hubspot\", \"bigin\", \"pipedrive\", \"monday\"\nconst normName = n => clean(n).toLowerCase()\n  .replace(/[®™©]/g, '')\n  .replace(/\\.(com|io|ai|co|app)\\b/g, ' ')\n  .replace(/\\b(crm|software|app|inc|ltd|the|platform)\\b/g, ' ')\n  .replace(/[^a-z0-9]+/g, ' ')\n  .trim()\n  .replace(/ by [a-z0-9]+$/, '')\n  .trim();\nconst keyOf = n => normName(n).replace(/ /g, '');\n\n// 15, \"15\", \"€15/user/month\", \"15,00\" -> 15 ; \"Free\" -> 0 ; \"Contact sales\", \"\", null -> null\nconst toNumber = v => {\n  if (typeof v === 'number') return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : null;\n  const s = clean(v).toLowerCase();\n  if (!s || /contact|custom|quote|sales/.test(s)) return null;\n  if (s === 'free') return 0;\n  const m = s.replace(/\\s/g, '').match(/(\\d+(?:[.,]\\d+)?)/);\n  if (!m) return null;\n  const n = parseFloat(m[1].replace(',', '.'));\n  return Number.isFinite(n) && n >= 0 && n < 10000 ? Math.round(n * 100) / 100 : null;\n};\n\n// true, \"yes\", \"oui\", \"1\" -> true ; false, \"no\", \"non\", \"0\" -> false ; anything else -> null\nconst toBool = v => {\n  if (typeof v === 'boolean') return v;\n  const s = clean(v).toLowerCase();\n  if (['true', 'yes', 'oui', '1'].includes(s)) return true;\n  if (['false', 'no', 'non', '0'].includes(s)) return false;\n  return null;\n};\n\n// Fix #5 v2: only USD, EUR, GBP are comparable; everything else -> null (price kept as a note).\nconst toCurrency = (c, note) => {\n  const code = clean(c).toUpperCase();\n  if (['USD', 'EUR', 'GBP'].includes(code)) return code;\n  if (/^[A-Z]{3}$/.test(code)) return null;                       // another explicit code (INR, CAD…)\n  const s = clean(note);\n  if (/\\b(INR|CAD|AUD|NZD|JPY|CHF|SEK|NOK|DKK|BRL|MXN|ZAR|SGD|HKD)\\b|₹|\\bRs\\.?\\s?\\d|CA\\$|C\\$|AU?\\$|NZ\\$|S\\$|HK\\$|R\\$|¥/i.test(s)) return null;\n  if (/\\bUSD\\b|US\\$|\\$|\\bdollars?\\b/i.test(s)) return 'USD';\n  if (/\\bGBP\\b|£|\\bpounds?\\b/i.test(s)) return 'GBP';\n  if (/\\bEUR\\b|€|\\beuros?\\b/i.test(s)) return 'EUR';\n  return null;\n};\n\nconst isUrl  = u => /^https?:\\/\\/\\S+$/i.test(clean(u));\n// v2.1: regex instead of URL(), which is not available in the n8n Code sandbox\nconst hostOf = u => {\n  const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i);\n  return m ? m[1].toLowerCase().replace(/^www\\./, '') : '';\n};\n// Official source = the URL's host contains the tool's name (hubspot.com for HubSpot).\nconst official = (url, key) => key.length >= 4 && hostOf(url).replace(/[^a-z0-9]/g, '').includes(key.slice(0, 6));\n\n// ---------- 1. clean every candidate, keep the best-sourced one per tool ----------\nconst best = new Map();                                   // tool_key -> { row, score, others }\n\nfor (const t of raw) {\n  const name = clean(t.name);\n  const k = keyOf(name);\n  const url = clean(t.source_url);\n  if (!name || !k || !isUrl(url)) continue;              // unusable row: rejected\n  const tool_key = `${category}|${k}`;\n\n  const cur = toCurrency(t.currency, t.price_note);\n  const rawPrice = toNumber(t.price_per_user_month);\n  const price = cur ? rawPrice : null;                   // no trusted currency -> no comparable price\n  let note = clean(t.price_note);\n  if (rawPrice !== null && !cur) note = `listed as ${rawPrice} ${clean(t.currency) || '(currency not stated)'}, see source`;\n  if (price === null && !note) note = 'see source';\n  const free = toBool(t.free_plan);\n\n  const row = {\n    tool_key,\n    category,\n    name: name.slice(0, 80),\n    plan_name: clean(t.plan_name).slice(0, 60),\n    price_per_user_month: price === null ? '' : price,\n    currency: cur || '',\n    price_note: note.slice(0, 120),\n    free_plan: free === null ? '' : free,\n    key_features: clean(t.key_features).slice(0, 200),\n    integrations: clean(t.integrations).slice(0, 200),\n    best_for: clean(t.best_for).slice(0, 120),\n    source_url: url,\n    last_checked: today,\n  };\n\n  const score = (official(url, k) ? 4 : 0) + (price !== null ? 3 : 0) + (row.plan_name ? 1 : 0)\n              + (free !== null ? 1 : 0) + (row.key_features ? 1 : 0) + (row.integrations ? 1 : 0);\n\n  const prev = best.get(tool_key);\n  if (!prev) { best.set(tool_key, { row, score, others: [] }); continue; }\n\n  const newWins = score > prev.score;\n  const win  = newWins ? { row, score, others: prev.others } : prev;\n  const lose = newWins ? prev.row : row;\n  if (lose.price_per_user_month !== '' && lose.price_per_user_month !== win.row.price_per_user_month) {\n    win.others.push(`${lose.price_per_user_month} ${lose.currency} (${hostOf(lose.source_url)})`);\n  }\n  best.set(tool_key, win);\n}\n\n// ---------- 2. protect human checks (v3) ----------\n// A verified row keeps its human-checked values. If the refresh found a DIFFERENT\n// non-empty value for one of the key fields, the row goes back to \"unverified\"\n// and the note lists each change. An empty field from the refresh means\n// \"not found\", not \"changed\".\nconst byKey  = new Map(existing.map(r => [r.tool_key, r]));\nconst FIELDS = ['price_per_user_month', 'currency', 'plan_name', 'free_plan'];\nconst norm   = v => String(v ?? '').replace(',', '.').trim().toLowerCase();\nconst show   = v => (norm(v) === '' ? '(empty)' : String(v));\nconst out = [];\n\nfor (const [tool_key, { row, others }] of best) {\n  if (others.length) {\n    row.price_note = `${row.price_note}${row.price_note ? '; ' : ''}also seen: ${[...new Set(others)].join(', ')}`.slice(0, 120);\n  }\n\n  const old = byKey.get(tool_key);\n\n  if (old && old.status === 'verified') {\n    const foundAt = hostOf(row.source_url);\n    const changes = FIELDS\n      .filter(f => norm(row[f]) !== '' && norm(row[f]) !== norm(old[f]))\n      .map(f => `${f} ${show(old[f])} -> ${show(row[f])}`);\n\n    // keep the human-checked values\n    for (const f of [...FIELDS, 'price_note', 'source_url']) row[f] = old[f] ?? '';\n\n    if (changes.length) {\n      row.status = 'unverified';\n      row.verified_by = '';\n      row.notes = (`refresh on ${today} found: ${changes.join('; ')} (${foundAt}). Check, then /verify or edit.`\n        + (old.notes ? ` | ${old.notes}` : '')).slice(0, 500);\n    } else {\n      row.status = 'verified';\n      row.verified_by = old.verified_by || '';\n      row.notes = old.notes || '';\n    }\n  } else {\n    row.status = 'unverified';\n    row.verified_by = '';\n    row.notes = old ? (old.notes || '') : '';\n  }\n\n  out.push(row);\n}\n\nif (out.length === 0) throw new Error(`No valid tools extracted for ${category}`);\nreturn out.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        160
+      ],
+      "id": "92e11b91-22e4-4331-8408-045cb8f87120",
+      "name": "Validate + dedupe",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI",
+          "mode": "list",
+          "cachedResultName": "AppScout DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tools",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1m6Sz0zD-_XCed1iTme2QM1yMkJj7kgL8GtorcZ7hKVI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "tool_key"
+          ],
+          "schema": [
+            {
+              "id": "tool_key",
+              "displayName": "tool_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "plan_name",
+              "displayName": "plan_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price_per_user_month",
+              "displayName": "price_per_user_month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price_note",
+              "displayName": "price_note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "free_plan",
+              "displayName": "free_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "key_features",
+              "displayName": "key_features",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "integrations",
+              "displayName": "integrations",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "best_for",
+              "displayName": "best_for",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "verified_by",
+              "displayName": "verified_by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked",
+              "displayName": "last_checked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2864,
+        160
+      ],
+      "id": "9a5e3d32-01b5-421e-8ff7-5022808febab",
+      "name": "Save tools",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "31FGgaXKNDQHWvph",
+          "name": "Google Service Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Cache branch: one item that carries the stored rows\nif (items.length === 1 && Array.isArray(items[0].json.rows)) {\n  return items[0].json.rows.map(r => ({ json: { ...r, from_cache: true } }));\n}\n\n// Search branch: the rows just saved, plus older stored rows this search did not find again\nconst saved = items.map(i => i.json);\nconst keys = new Set(saved.map(r => r.tool_key));\nconst older = ($('Cache check').first().json.rows || []).filter(r => !keys.has(r.tool_key));\nreturn [\n  ...saved.map(r => ({ json: { ...r, from_cache: false } })),\n  ...older.map(r => ({ json: { ...r, from_cache: true } })),\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -448
+      ],
+      "id": "eb0e8a85-21e8-44bf-8826-294258df6944",
+      "name": "Return rows"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The search or the extraction failed even after retries: fall back to what we have.\nconst rows = $('Cache check').first().json.rows || [];\nif (rows.length === 0) throw new Error('Search failed and there are no stored rows for this category');\nreturn rows.map(r => ({ json: { ...r, from_cache: true, stale: true } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        576
+      ],
+      "id": "6a69eb71-6040-43d4-bd6d-17d1e668298b",
+      "name": "Use stale rows"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3.5-super-vl:free",
+        "options": {
+          "temperature": 0,
+          "timeout": 300000,
+          "maxRetries": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        464
+      ],
+      "id": "bb2b5864-67ce-4b6d-b656-cc0923b96886",
+      "name": "Extract model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "cohere/north-mini-code:free",
+        "options": {
+          "temperature": 0,
+          "timeout": 180000,
+          "maxRetries": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        560
+      ],
+      "id": "49c41544-7f4e-42df-81c2-2049e1a1f243",
+      "name": "Extract fallback model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "XVvgjwlQP8mPxzyL",
+          "name": "OpenRouter AppScout"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tools\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"name\":                 { \"type\": \"string\" },\n          \"plan_name\":            { \"type\": [\"string\", \"null\"] },\n          \"price_per_user_month\": { \"type\": [\"number\", \"string\", \"null\"] },\n          \"currency\":             { \"type\": [\"string\", \"null\"] },\n          \"price_note\":           { \"type\": [\"string\", \"null\"] },\n          \"free_plan\":            { \"type\": [\"boolean\", \"string\", \"null\"] },\n          \"key_features\":         { \"type\": [\"string\", \"array\", \"null\"], \"items\": { \"type\": \"string\" } },\n          \"integrations\":         { \"type\": [\"string\", \"array\", \"null\"], \"items\": { \"type\": \"string\" } },\n          \"best_for\":             { \"type\": [\"string\", \"null\"] },\n          \"source_url\":           { \"type\": [\"string\", \"null\"] }\n        },\n        \"required\": [\"name\"]\n      }\n    }\n  },\n  \"required\": [\"tools\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2176,
+        272
+      ],
+      "id": "017fb95f-f290-49a5-8a7d-242a8e11965b",
+      "name": "Extract output parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Read Tools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Tools": {
+      "main": [
+        [
+          {
+            "node": "Cache check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cache check": {
+      "main": [
+        [
+          {
+            "node": "Use cache?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use cache?": {
+      "main": [
+        [
+          {
+            "node": "Return rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build queries": {
+      "main": [
+        [
+          {
+            "node": "Search Tavily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Tavily": {
+      "main": [
+        [
+          {
+            "node": "Tavily OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily OK?": {
+      "main": [
+        [
+          {
+            "node": "Use fallback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use fallback?": {
+      "main": [
+        [
+          {
+            "node": "Search LangSearch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Combine pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search LangSearch": {
+      "main": [
+        [
+          {
+            "node": "LangSearch to Tavily shape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LangSearch to Tavily shape": {
+      "main": [
+        [
+          {
+            "node": "Combine pages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Use stale rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine pages": {
+      "main": [
+        [
+          {
+            "node": "Extract tools",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Use stale rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract tools": {
+      "main": [
+        [
+          {
+            "node": "Keep only fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Keep only fields": {
+      "main": [
+        [
+          {
+            "node": "Validate + dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate + dedupe": {
+      "main": [
+        [
+          {
+            "node": "Save tools",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Use stale rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save tools": {
+      "main": [
+        [
+          {
+            "node": "Return rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract tools",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract fallback model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract tools",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract output parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract tools",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "YWppHtlgq2Jhq54v",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "61cba3a8-e956-4b52-b44e-87aa9e5daeb6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "01e6706f0e5d97aca7ead92ee4ef94cbe0505aac717af267d1dbff6c99c8bcfd"
+  },
+  "nodeGroups": [],
+  "id": "7vApoSVKA7rPPEIF",
+  "tags": []
+}
