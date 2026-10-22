@@ -1,0 +1,13 @@
+# secrets: never commit
+.env
+*.env.local
+*service-account*.json
+*credentials*.json
+appscout-*.json
+
+# local data and backups (the n8n data lives in the Docker volume n8n_data)
+n8n_data/
+*.tgz
+
+# macOS
+.DS_Store
